@@ -52,10 +52,31 @@ export class ClassesService {
 
     return newClass[0];
   }
+
   async update(id: number, dto: Partial<CreateClassDto>) {
+    const updateData: CreateClassDto = { ...dto };
+
+    if (dto.dosenId) {
+      const user = await this.db.query.users.findFirst({
+        where: eq(schema.users.npm_atau_nip, dto.dosenId),
+      });
+
+      if (!user) {
+        throw new NotFoundException(
+          `Dosen dengan NIP ${dto.dosenId} tidak ditemukan di sistem`,
+        );
+      }
+
+      updateData.dosenId = user.id;
+    }
+
+    if (typeof updateData.dosenId === 'string') {
+      delete updateData.dosenId;
+    }
+
     return await this.db
       .update(schema.classes)
-      .set(dto)
+      .set(updateData)
       .where(eq(schema.classes.id, id))
       .returning();
   }
@@ -93,7 +114,17 @@ export class ClassesService {
     return students;
   }
 
-  async getDosenClasses(dosenId: number) {
+  async getDosenClasses(dosenId: string) {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.npm_atau_nip, dosenId),
+    });
+
+    if (!user) {
+      throw new NotFoundException(
+        `Dosen dengan NIP ${dosenId} tidak ditemukan di sistem`,
+      );
+    }
+
     return await this.db
       .select({
         id: schema.classes.id,
@@ -104,6 +135,6 @@ export class ClassesService {
       })
       .from(schema.classes)
       .innerJoin(schema.courses, eq(schema.classes.courseId, schema.courses.id))
-      .where(eq(schema.classes.dosenId, dosenId));
+      .where(eq(schema.classes.dosenId, user.id));
   }
 }

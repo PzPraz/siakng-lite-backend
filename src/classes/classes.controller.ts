@@ -48,7 +48,7 @@ export class ClassesController {
 
   @Get('dosen/:dosenId')
   @Roles('DOSEN')
-  async getDosenClassses(@Param('id') dosenId: string) {
-    return this.classesService.getDosenClasses(Number(dosenId));
+  async getDosenClasses(@Param('dosenId') dosenId: string) {
+    return this.classesService.getDosenClasses(dosenId);
   }
 }
