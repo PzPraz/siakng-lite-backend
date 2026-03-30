@@ -32,9 +32,40 @@ export class CourseService {
   }
 
   async getById(id: number) {
-    return await this.db
-      .select()
+    const rows = await this.db
+      .select({
+        // Data Course
+        courseId: schema.courses.id,
+        nama: schema.courses.nama,
+        kode: schema.courses.kode,
+        sks: schema.courses.sks,
+        // Data Kelas
+        classId: schema.classes.id,
+        namaKelas: schema.classes.namaKelas,
+        jadwal: schema.classes.jadwal,
+        kapasitas: schema.classes.kapasitas,
+      })
       .from(schema.courses)
+      .leftJoin(schema.classes, eq(schema.classes.courseId, schema.courses.id))
       .where(eq(schema.courses.id, id));
+
+    if (rows.length === 0) return null;
+
+    const result = {
+      id: rows[0].courseId,
+      nama: rows[0].nama,
+      kode: rows[0].kode,
+      sks: rows[0].sks,
+      classes: rows
+        .filter((row) => row.classId !== null)
+        .map((row) => ({
+          id: row.classId,
+          namaKelas: row.namaKelas,
+          jadwal: row.jadwal,
+          kapasitas: row.kapasitas,
+        })),
+    };
+
+    return result;
   }
 }
