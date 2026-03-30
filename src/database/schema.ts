@@ -33,7 +33,7 @@ export const classes = pgTable('classes', {
     })
     .notNull(),
   namaKelas: varchar('nama_kelas', { length: 20 }).notNull(),
-  dosenId: integer('dosen_id').references(() => users.id),
+  dosenId: varchar('dosen_id').references(() => users.npm_atau_nip),
   kapasitas: integer('kapasitas').notNull().default(40),
   jadwal: varchar('jadwal', { length: 100 }),
 });
