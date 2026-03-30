@@ -11,9 +11,11 @@ import { CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from 'src/auth/decorators/role.decorator';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
 
 @Controller('course')
-@UseGuards(JwtAuthGuard)
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
 
@@ -31,6 +33,6 @@ export class CourseController {
   @Delete(':id')
   @Roles('DOSEN')
   async remove(@Param('id') id: string) {
-    return this.courseService.delete(id);
+    return this.courseService.delete(+id);
   }
 }
