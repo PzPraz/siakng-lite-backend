@@ -1,0 +1,1 @@
+ALTER TABLE "courses" ALTER COLUMN "sks" SET DATA TYPE integer;

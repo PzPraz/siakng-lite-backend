@@ -22,7 +22,7 @@ export const courses = pgTable('courses', {
   id: serial('id').primaryKey(),
   kode: varchar('kode', { length: 20 }).notNull().unique(),
   nama: varchar('nama', { length: 255 }).notNull(),
-  sks: serial('sks').notNull(),
+  sks: integer('sks').notNull(),
 });
 
 export const classes = pgTable('classes', {

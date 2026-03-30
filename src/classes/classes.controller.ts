@@ -40,7 +40,7 @@ export class ClassesController {
     return this.classesService.delete(Number(id));
   }
 
-  @Get(':id/students')
+  @Get(':id/dosen/students')
   @Roles('DOSEN')
   async getStudents(@Param('id') classId: string) {
     return this.classesService.getStudentsInClass(Number(classId));

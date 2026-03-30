@@ -39,10 +39,12 @@ export class ClassesService {
       );
     }
 
+    const { dosenId, ...classData } = dto;
+
     const newClass = await this.db
       .insert(schema.classes)
       .values({
-        ...dto,
+        ...classData,
         dosenId: user.id,
       })
       .returning();
