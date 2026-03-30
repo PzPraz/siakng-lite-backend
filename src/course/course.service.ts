@@ -22,4 +22,12 @@ export class CourseService {
       .delete(schema.courses)
       .where(eq(schema.courses.id, id));
   }
+
+  async edit(id: number, updateData: CreateCourseDto) {
+    return await this.db
+      .update(schema.courses)
+      .set(updateData)
+      .where(eq(schema.courses.id, id))
+      .returning();
+  }
 }

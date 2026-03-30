@@ -6,6 +6,7 @@ import {
   Delete,
   Param,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import { CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -34,5 +35,11 @@ export class CourseController {
   @Roles('DOSEN')
   async remove(@Param('id') id: string) {
     return this.courseService.delete(+id);
+  }
+
+  @Patch(':id')
+  @Roles('DOSEN')
+  async update(@Param('id') id: string, @Body() updateData: CreateCourseDto) {
+    return this.courseService.edit(+id, updateData);
   }
 }
