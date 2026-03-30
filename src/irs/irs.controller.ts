@@ -4,6 +4,8 @@ import {
   Post,
   UseGuards,
   Request,
+  Param,
+  Delete,
   Get,
 } from '@nestjs/common';
 import { IrsService } from './irs.service';
@@ -36,5 +38,14 @@ export class IrsController {
     const userId = req.user.id;
 
     return this.irsService.getMyIrs(userId);
+  }
+
+  @Delete('drop/:id')
+  async dropIrs(
+    @Request() req: AuthenticatedRequest,
+    @Param('id') irsId: string,
+  ) {
+    const userId = req.user.id;
+    return this.irsService.drop(userId, irsId);
   }
 }
