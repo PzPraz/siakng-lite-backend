@@ -30,7 +30,7 @@ export class ClassesService {
 
   async create(dto: CreateClassDto) {
     const user = await this.db.query.users.findFirst({
-      where: eq(schema.users.npm_atau_nip, dto.dosenId.toString()),
+      where: eq(schema.users.npm_atau_nip, dto.dosenId),
     });
 
     if (!user) {
@@ -39,6 +39,7 @@ export class ClassesService {
       );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { dosenId, ...classData } = dto;
 
     const newClass = await this.db
