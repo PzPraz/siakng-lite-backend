@@ -56,4 +56,34 @@ export class ClassesService {
       data: deleted[0],
     };
   }
+
+  async getStudentsInClass(classId: number) {
+    const students = await this.db
+      .select({
+        id: schema.users.id,
+        npm: schema.users.npm_atau_nip,
+        nama: schema.users.nama,
+        statusIrs: schema.irs.status,
+        enrolledAt: schema.irs.createdAt,
+      })
+      .from(schema.irs)
+      .innerJoin(schema.users, eq(schema.irs.studentId, schema.users.id))
+      .where(eq(schema.irs.classId, classId));
+
+    return students;
+  }
+
+  async getDosenClasses(dosenId: number) {
+    return await this.db
+      .select({
+        id: schema.classes.id,
+        namaKelas: schema.classes.namaKelas,
+        namaMatkul: schema.courses.nama,
+        kapasitas: schema.classes.kapasitas,
+        terisi: sql<number>`(SELECT count(*) FROM ${schema.irs} WHERE ${schema.irs.classId} = ${schema.classes.id})`,
+      })
+      .from(schema.classes)
+      .innerJoin(schema.courses, eq(schema.classes.courseId, schema.courses.id))
+      .where(eq(schema.classes.dosenId, dosenId));
+  }
 }
