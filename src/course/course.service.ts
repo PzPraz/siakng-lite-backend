@@ -44,9 +44,11 @@ export class CourseService {
         namaKelas: schema.classes.namaKelas,
         jadwal: schema.classes.jadwal,
         kapasitas: schema.classes.kapasitas,
+        namaDosen: schema.users.nama,
       })
       .from(schema.courses)
       .leftJoin(schema.classes, eq(schema.classes.courseId, schema.courses.id))
+      .leftJoin(schema.users, eq(schema.classes.dosenId, schema.users.id))
       .where(eq(schema.courses.id, id));
 
     if (rows.length === 0) return null;
@@ -63,6 +65,7 @@ export class CourseService {
           namaKelas: row.namaKelas,
           jadwal: row.jadwal,
           kapasitas: row.kapasitas,
+          namaDosen: row.namaDosen,
         })),
     };
 
