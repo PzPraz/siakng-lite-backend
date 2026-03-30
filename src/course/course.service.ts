@@ -48,7 +48,10 @@ export class CourseService {
       })
       .from(schema.courses)
       .leftJoin(schema.classes, eq(schema.classes.courseId, schema.courses.id))
-      .leftJoin(schema.users, eq(schema.classes.dosenId, schema.users.id))
+      .leftJoin(
+        schema.users,
+        eq(schema.classes.dosenId, schema.users.npm_atau_nip),
+      )
       .where(eq(schema.courses.id, id));
 
     if (rows.length === 0) return null;
