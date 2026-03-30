@@ -4,6 +4,7 @@ import * as schema from '../database/schema';
 import { eq, sql } from 'drizzle-orm';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { CreateClassDto } from './dto/create-class.dto';
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class ClassesService {
@@ -40,8 +41,19 @@ export class ClassesService {
   }
 
   async delete(id: number) {
-    return await this.db
+    const deleted = await this.db
       .delete(schema.classes)
-      .where(eq(schema.classes.id, id));
+      .where(eq(schema.classes.id, id))
+      .returning();
+
+    if (deleted.length === 0) {
+      throw new NotFoundException(`Kelas dengan ID ${id} tidak ditemukan`);
+    }
+
+    return {
+      message:
+        'Kelas dan seluruh data pendaftaran (IRS) terkait berhasil dihapus',
+      data: deleted[0],
+    };
   }
 }
