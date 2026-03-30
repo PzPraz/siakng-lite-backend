@@ -31,13 +31,13 @@ export class ClassesController {
     @Param('id') id: string,
     @Body() createClassDto: Partial<CreateClassDto>,
   ) {
-    return this.classesService.update(+id, createClassDto);
+    return this.classesService.update(Number(id), createClassDto);
   }
 
   @Delete(':id')
   @Roles('DOSEN')
   async delete(@Param('id') id: string) {
-    return this.classesService.delete(+id);
+    return this.classesService.delete(Number(id));
   }
 
   @Get(':id/students')
@@ -49,6 +49,6 @@ export class ClassesController {
   @Get(':id')
   @Roles('DOSEN')
   async getDosenClassses(@Param('id') dosenId: string) {
-    return this.classesService.getDosenClasses(dosenId);
+    return this.classesService.getDosenClasses(Number(dosenId));
   }
 }

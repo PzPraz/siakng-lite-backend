@@ -30,14 +30,14 @@ export class IrsController {
   ) {
     const userId = req.user.id;
 
-    return this.irsService.enroll(userId, enrollIrsDto.classId);
+    return this.irsService.enroll(Number(userId), enrollIrsDto.classId);
   }
 
   @Get('my-irs')
   async getMyIrs(@Request() req: AuthenticatedRequest) {
     const userId = req.user.id;
 
-    return this.irsService.getMyIrs(userId);
+    return this.irsService.getMyIrs(Number(userId));
   }
 
   @Delete('drop/:id')
@@ -46,6 +46,6 @@ export class IrsController {
     @Param('id') irsId: string,
   ) {
     const userId = req.user.id;
-    return this.irsService.drop(userId, irsId);
+    return this.irsService.drop(Number(userId), Number(irsId));
   }
 }
