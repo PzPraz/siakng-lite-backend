@@ -15,6 +15,13 @@
       "when": 1774861500643,
       "tag": "0001_unknown_raider",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774872182573,
+      "tag": "0002_complex_unicorn",
+      "breakpoints": true
     }
   ]
 }

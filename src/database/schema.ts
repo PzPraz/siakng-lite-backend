@@ -27,9 +27,11 @@ export const courses = pgTable('courses', {
 
 export const classes = pgTable('classes', {
   id: serial('id').primaryKey(),
-  courseId: integer('course_id').references(() => courses.id, {
-    onDelete: 'cascade',
-  }),
+  courseId: integer('course_id')
+    .references(() => courses.id, {
+      onDelete: 'cascade',
+    })
+    .notNull(),
   namaKelas: varchar('nama_kelas', { length: 20 }).notNull(),
   dosenId: integer('dosen_id').references(() => users.id),
   kapasitas: integer('kapasitas').notNull().default(40),
