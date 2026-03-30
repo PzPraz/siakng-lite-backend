@@ -5,6 +5,7 @@ import {
   Post,
   Param,
   Patch,
+  Get,
   Delete,
 } from '@nestjs/common';
 import { ClassesService } from './classes.service';
@@ -37,5 +38,17 @@ export class ClassesController {
   @Roles('DOSEN')
   async delete(@Param('id') id: string) {
     return this.classesService.delete(+id);
+  }
+
+  @Get(':id/students')
+  @Roles('DOSEN')
+  async getStudents(@Param('id') classId: string) {
+    return this.classesService.getStudentsInClass(Number(classId));
+  }
+
+  @Get(':id')
+  @Roles('DOSEN')
+  async getDosenClassses(@Param('id') dosenId: string) {
+    return this.classesService.getDosenClasses(dosenId);
   }
 }
