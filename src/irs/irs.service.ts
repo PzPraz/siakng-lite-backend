@@ -3,6 +3,7 @@ import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from 'src/database/database.module';
 import * as schema from '../database/schema';
 import { eq, and, sql } from 'drizzle-orm';
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class IrsService {
@@ -111,5 +112,39 @@ export class IrsService {
       .innerJoin(schema.classes, eq(schema.irs.classId, schema.classes.id))
       .innerJoin(schema.courses, eq(schema.classes.courseId, schema.courses.id))
       .where(eq(schema.irs.studentId, studentId));
+  }
+
+  async drop(studentId: number, irsId: number) {
+    return await this.db.transaction(async (tx) => {
+      const record = await tx
+        .select()
+        .from(schema.irs)
+        .where(
+          and(eq(schema.irs.id, irsId), eq(schema.irs.studentId, studentId)),
+        )
+        .limit(1);
+
+      if (record.length === 0) {
+        throw new NotFoundException('Data matkul di IRS tidak ditemukan');
+      }
+
+      const target = record[0];
+
+      if (target.status === 'APPROVED') {
+        throw new BadRequestException(
+          'Mata kuliah sudah disetujui (APPROVED). Silakan hubungi Dosen PA untuk melakukan perubahan.',
+        );
+      }
+
+      const deleted = await tx
+        .delete(schema.irs)
+        .where(eq(schema.irs.id, irsId))
+        .returning();
+
+      return {
+        message: 'Mata kuliah berhasil dihapus dari IRS',
+        droppedItem: deleted[0],
+      };
+    });
   }
 }
