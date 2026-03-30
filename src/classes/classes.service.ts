@@ -29,58 +29,21 @@ export class ClassesService {
   }
 
   async create(dto: CreateClassDto) {
-    const user = await this.db.query.users.findFirst({
-      where: eq(schema.users.npm_atau_nip, dto.dosenId),
-    });
-
-    if (!user) {
-      throw new NotFoundException(
-        `Dosen dengan NIP ${dto.dosenId} tidak ditemukan di sistem`,
-      );
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { dosenId, ...classData } = dto;
-
     const newClass = await this.db
       .insert(schema.classes)
-      .values({
-        ...classData,
-        dosenId: user.id,
-      })
+      .values(dto)
       .returning();
 
     return newClass[0];
   }
 
   async update(id: number, dto: Partial<CreateClassDto>) {
-    const updateData: CreateClassDto = { ...dto };
-
-    if (dto.dosenId) {
-      const user = await this.db.query.users.findFirst({
-        where: eq(schema.users.npm_atau_nip, dto.dosenId),
-      });
-
-      if (!user) {
-        throw new NotFoundException(
-          `Dosen dengan NIP ${dto.dosenId} tidak ditemukan di sistem`,
-        );
-      }
-
-      updateData.dosenId = user.id;
-    }
-
-    if (typeof updateData.dosenId === 'string') {
-      delete updateData.dosenId;
-    }
-
     return await this.db
       .update(schema.classes)
-      .set(updateData)
+      .set(dto)
       .where(eq(schema.classes.id, id))
       .returning();
   }
-
   async delete(id: number) {
     const deleted = await this.db
       .delete(schema.classes)
@@ -114,17 +77,7 @@ export class ClassesService {
     return students;
   }
 
-  async getDosenClasses(dosenId: string) {
-    const user = await this.db.query.users.findFirst({
-      where: eq(schema.users.npm_atau_nip, dosenId),
-    });
-
-    if (!user) {
-      throw new NotFoundException(
-        `Dosen dengan NIP ${dosenId} tidak ditemukan di sistem`,
-      );
-    }
-
+  async getDosenClasses(dosenNip: string) {
     return await this.db
       .select({
         id: schema.classes.id,
@@ -135,6 +88,6 @@ export class ClassesService {
       })
       .from(schema.classes)
       .innerJoin(schema.courses, eq(schema.classes.courseId, schema.courses.id))
-      .where(eq(schema.classes.dosenId, user.id));
+      .where(eq(schema.classes.dosenId, dosenNip));
   }
 }
