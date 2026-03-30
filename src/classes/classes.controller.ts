@@ -1,4 +1,41 @@
-import { Controller } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  UseGuards,
+  Post,
+  Param,
+  Patch,
+  Delete,
+} from '@nestjs/common';
+import { ClassesService } from './classes.service';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { CreateClassDto } from './dto/create-class.dto';
+import { Roles } from 'src/auth/decorators/role.decorator';
 
 @Controller('classes')
-export class ClassesController {}
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class ClassesController {
+  constructor(private readonly classesService: ClassesService) {}
+
+  @Post()
+  @Roles('DOSEN')
+  async create(@Body() createClassDto: CreateClassDto) {
+    return this.classesService.create(createClassDto);
+  }
+
+  @Patch(':id')
+  @Roles('DOSEN')
+  async update(
+    @Param('id') id: string,
+    @Body() createClassDto: Partial<CreateClassDto>,
+  ) {
+    return this.classesService.update(+id, createClassDto);
+  }
+
+  @Delete(':id')
+  @Roles('DOSEN')
+  async delete(@Param('id') id: string) {
+    return this.classesService.delete(+id);
+  }
+}
