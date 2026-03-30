@@ -46,7 +46,7 @@ export class ClassesController {
     return this.classesService.getStudentsInClass(Number(classId));
   }
 
-  @Get(':id')
+  @Get('dosen/:dosenId')
   @Roles('DOSEN')
   async getDosenClassses(@Param('id') dosenId: string) {
     return this.classesService.getDosenClasses(Number(dosenId));

@@ -44,7 +44,7 @@ export const irs = pgTable('irs', {
     .references(() => users.id, { onDelete: 'cascade' })
     .notNull(),
   classId: integer('class_id')
-    .references(() => courses.id, { onDelete: 'cascade' })
+    .references(() => classes.id, { onDelete: 'cascade' })
     .notNull(),
   status: varchar('status', { length: 20 }).default('PENDING'),
   createdAt: timestamp('created_at').defaultNow(),

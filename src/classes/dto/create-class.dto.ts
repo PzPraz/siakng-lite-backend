@@ -18,8 +18,8 @@ export class CreateClassDto {
   namaKelas: string;
 
   @IsInt()
-  @IsOptional()
-  dosenId?: number;
+  @IsNotEmpty()
+  dosenId: number;
 
   @IsInt()
   @IsNotEmpty()

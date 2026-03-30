@@ -29,9 +29,26 @@ export class ClassesService {
   }
 
   async create(dto: CreateClassDto) {
-    return await this.db.insert(schema.classes).values(dto).returning();
-  }
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.npm_atau_nip, dto.dosenId.toString()),
+    });
 
+    if (!user) {
+      throw new NotFoundException(
+        `Dosen dengan NIP ${dto.dosenId} tidak ditemukan di sistem`,
+      );
+    }
+
+    const newClass = await this.db
+      .insert(schema.classes)
+      .values({
+        ...dto,
+        dosenId: user.id,
+      })
+      .returning();
+
+    return newClass[0];
+  }
   async update(id: number, dto: Partial<CreateClassDto>) {
     return await this.db
       .update(schema.classes)
