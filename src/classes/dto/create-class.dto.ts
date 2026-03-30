@@ -17,9 +17,9 @@ export class CreateClassDto {
   @MaxLength(10, { message: 'namaKelas maksimal 10 karakter' })
   namaKelas: string;
 
-  @IsInt()
+  @IsString()
   @IsNotEmpty()
-  dosenId: number;
+  dosenId: string;
 
   @IsInt()
   @IsNotEmpty()
