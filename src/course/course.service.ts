@@ -30,4 +30,11 @@ export class CourseService {
       .where(eq(schema.courses.id, id))
       .returning();
   }
+
+  async getById(id: number) {
+    return await this.db
+      .select()
+      .from(schema.courses)
+      .where(eq(schema.courses.id, id));
+  }
 }

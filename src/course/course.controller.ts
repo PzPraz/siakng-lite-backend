@@ -42,4 +42,9 @@ export class CourseController {
   async update(@Param('id') id: string, @Body() updateData: CreateCourseDto) {
     return this.courseService.edit(+id, updateData);
   }
+
+  @Get(':id')
+  async getById(@Param('id') id: string) {
+    return this.courseService.getById(Number(id));
+  }
 }
