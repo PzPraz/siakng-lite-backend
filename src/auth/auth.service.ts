@@ -76,6 +76,7 @@ export class AuthService {
       user: {
         nama: user.nama,
         role: user.role,
+        npm_atau_nip: user.npm_atau_nip,
       },
     };
   }
