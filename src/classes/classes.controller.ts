@@ -25,12 +25,6 @@ export class ClassesController {
     return this.classesService.getDosenClasses(dosenId);
   }
 
-  @Get(':id/students')
-  @Roles('DOSEN')
-  async getStudents(@Param('id') classId: string) {
-    return this.classesService.getStudentsInClass(Number(classId));
-  }
-
   @Get()
   async getAllClasses() {
     return this.classesService.findAll();
@@ -39,6 +33,12 @@ export class ClassesController {
   @Get(':id')
   async getClassById(@Param('id') classId: string) {
     return this.classesService.getClassById(Number(classId));
+  }
+
+  @Get(':id/students')
+  @Roles('DOSEN')
+  async getStudents(@Param('id') classId: string) {
+    return this.classesService.getStudentsInClass(Number(classId));
   }
 
   @Post()
