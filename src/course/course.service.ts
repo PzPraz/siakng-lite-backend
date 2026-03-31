@@ -54,7 +54,7 @@ export class CourseService {
 
     if (duplicate) {
       const field = duplicate.kode === updateData.kode ? 'Kode' : 'Nama';
-      throw new Error(`${field} mata kuliah sudah digunakan oleh data lain.`);
+      throw new BadRequestException(`${field} mata kuliah sudah digunakan oleh data lain.`);
     }
 
     return await this.db
