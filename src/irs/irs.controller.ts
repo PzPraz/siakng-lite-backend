@@ -25,11 +25,11 @@ export class IrsController {
   @Post('enroll')
   async enroll(
     @Request() req: AuthenticatedRequest,
-    @Body() classIds: number[],
+    @Body() body: { classIds: number[] },
   ) {
     const userId = req.user.id;
 
-    return this.irsService.enroll(Number(userId), classIds);
+    return this.irsService.enroll(Number(userId), body.classIds);
   }
 
   @Get('my-irs')

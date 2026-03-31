@@ -28,12 +28,12 @@ export class IrsService {
           )
           .where(eq(schema.classes.id, classId))
           .limit(1);
-  
+
         if (classData.length === 0) {
           throw new BadRequestException('Kelas tidak ditemukan');
         }
         const target = classData[0];
-  
+
         const currentIrs = await tx
           .select({
             sks: schema.courses.sks,
@@ -45,30 +45,30 @@ export class IrsService {
             eq(schema.classes.courseId, schema.courses.id),
           )
           .where(eq(schema.irs.studentId, studentId));
-  
+
         const totalSksSekarang = currentIrs.reduce(
           (acc, curr) => acc + curr.sks,
           0,
         );
-  
+
         const BATAS_MAKSIMAL_SKS = 24;
         if (totalSksSekarang + target.sks > BATAS_MAKSIMAL_SKS) {
           throw new BadRequestException(
             `Batas SKS terlampaui! SKS saat ini: ${totalSksSekarang}, ditambah matkul ini (${target.sks}) akan menjadi ${totalSksSekarang + target.sks}. (Maksimal: ${BATAS_MAKSIMAL_SKS})`,
           );
         }
-  
+
         const targetClass = classData[0];
-  
+
         const currentEnrolled = await tx
           .select({ count: sql<number>`count(*)` })
           .from(schema.irs)
           .where(eq(schema.irs.classId, classId));
-  
+
         if (Number(currentEnrolled[0].count) >= targetClass.kapasitas) {
           throw new BadRequestException('Kapasitas kelas sudah penuh');
         }
-  
+
         const duplicateCourse = await tx
           .select()
           .from(schema.irs)
@@ -79,13 +79,13 @@ export class IrsService {
               eq(schema.classes.courseId, targetClass.courseId),
             ),
           );
-  
+
         if (duplicateCourse.length > 0) {
           throw new BadRequestException(
             'Anda sudah terdaftar di mata kuliah ini (pada kelas lain)',
           );
         }
-  
+
         const result = await tx
           .insert(schema.irs)
           .values({
@@ -97,7 +97,7 @@ export class IrsService {
 
         results.push(result[0]);
       }
-      
+
       return results;
     });
   }
