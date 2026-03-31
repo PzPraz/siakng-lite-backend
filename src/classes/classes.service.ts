@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE } from 'src/database/database.module';
 import * as schema from '../database/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and } from 'drizzle-orm';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { CreateClassDto } from './dto/create-class.dto';
 import { NotFoundException } from '@nestjs/common';
@@ -33,6 +33,19 @@ export class ClassesService {
   }
 
   async create(dto: CreateClassDto) {
+    const dosen = await this.db.query.users.findFirst({
+      where: and(
+        eq(schema.users.npm_atau_nip, dto.dosenId),
+        eq(schema.users.role, 'DOSEN'),
+      ),
+    });
+
+    if (!dosen) {
+      throw new NotFoundException(
+        `Dosen dengan NIP ${dto.dosenId} tidak ditemukan atau tidak memiliki akses mengajar`,
+      );
+    }
+
     const newClass = await this.db
       .insert(schema.classes)
       .values(dto)
@@ -42,11 +55,32 @@ export class ClassesService {
   }
 
   async update(id: number, dto: Partial<CreateClassDto>) {
-    return await this.db
+    if (dto.dosenId) {
+      const dosen = await this.db.query.users.findFirst({
+        where: and(
+          eq(schema.users.npm_atau_nip, dto.dosenId),
+          eq(schema.users.role, 'DOSEN'),
+        ),
+      });
+
+      if (!dosen) {
+        throw new NotFoundException(
+          `Dosen dengan NIP ${dto.dosenId} tidak ditemukan`,
+        );
+      }
+    }
+
+    const updated = await this.db
       .update(schema.classes)
       .set(dto)
       .where(eq(schema.classes.id, id))
       .returning();
+
+    if (updated.length === 0) {
+      throw new NotFoundException(`Kelas dengan ID ${id} tidak ditemukan`);
+    }
+
+    return updated[0];
   }
   async delete(id: number) {
     const deleted = await this.db
