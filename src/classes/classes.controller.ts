@@ -19,6 +19,18 @@ import { Roles } from 'src/auth/decorators/role.decorator';
 export class ClassesController {
   constructor(private readonly classesService: ClassesService) {}
 
+  @Get('dosen/:dosenId')
+  @Roles('DOSEN')
+  async getDosenClasses(@Param('dosenId') dosenId: string) {
+    return this.classesService.getDosenClasses(dosenId);
+  }
+
+  @Get(':id/students')
+  @Roles('DOSEN')
+  async getStudents(@Param('id') classId: string) {
+    return this.classesService.getStudentsInClass(Number(classId));
+  }
+
   @Post()
   @Roles('DOSEN')
   async create(@Body() createClassDto: CreateClassDto) {
@@ -40,15 +52,8 @@ export class ClassesController {
     return this.classesService.delete(Number(id));
   }
 
-  @Get(':id/dosen/students')
-  @Roles('DOSEN')
-  async getStudents(@Param('id') classId: string) {
-    return this.classesService.getStudentsInClass(Number(classId));
-  }
-
-  @Get('dosen/:dosenId')
-  @Roles('DOSEN')
-  async getDosenClasses(@Param('dosenId') dosenId: string) {
-    return this.classesService.getDosenClasses(dosenId);
+  @Get(':id')
+  async getClassById(@Param('id') classId: string) {
+    return this.classesService.getClassById(classId);
   }
 }

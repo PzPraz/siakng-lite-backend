@@ -19,12 +19,16 @@ export class ClassesService {
         kapasitas: schema.classes.kapasitas,
         namaMatkul: schema.courses.nama,
         sks: schema.courses.sks,
+        dosenId: schema.classes.dosenId,
+        namaDosen: schema.users.nama,
+        courseId: schema.classes.courseId,
         terisi: sql<number>`(SELECT count(*) FROM ${schema.irs} WHERE ${schema.irs.classId} = ${schema.classes.id})`,
       })
       .from(schema.classes)
-      .innerJoin(
-        schema.courses,
-        eq(schema.classes.courseId, schema.courses.id),
+      .innerJoin(schema.courses, eq(schema.classes.courseId, schema.courses.id))
+      .leftJoin(
+        schema.users,
+        eq(schema.classes.dosenId, schema.users.npm_atau_nip),
       );
   }
 
@@ -64,11 +68,8 @@ export class ClassesService {
   async getStudentsInClass(classId: number) {
     const students = await this.db
       .select({
-        id: schema.users.id,
         npm: schema.users.npm_atau_nip,
         nama: schema.users.nama,
-        statusIrs: schema.irs.status,
-        enrolledAt: schema.irs.createdAt,
       })
       .from(schema.irs)
       .innerJoin(schema.users, eq(schema.irs.studentId, schema.users.id))
@@ -89,5 +90,33 @@ export class ClassesService {
       .from(schema.classes)
       .innerJoin(schema.courses, eq(schema.classes.courseId, schema.courses.id))
       .where(eq(schema.classes.dosenId, dosenNip));
+  }
+
+  async getClassById(classId: number) {
+    const rows = await this.db
+      .select({
+        id: schema.classes.id,
+        namaKelas: schema.classes.namaKelas,
+        jadwal: schema.classes.jadwal,
+        courseId: schema.classes.courseId,
+        namaMatkul: schema.courses.nama,
+        sks: schema.courses.sks,
+        dosenId: schema.classes.dosenId,
+        namaDosen: schema.users.nama,
+        terisi:
+          sql<number>`(SELECT count(*) FROM ${schema.irs} WHERE ${schema.irs.classId} = ${schema.classes.id})`.mapWith(
+            Number,
+          ),
+        kapasitas: schema.classes.kapasitas,
+      })
+      .from(schema.classes)
+      .innerJoin(schema.courses, eq(schema.classes.courseId, schema.courses.id))
+      .leftJoin(
+        schema.users,
+        eq(schema.classes.dosenId, schema.users.npm_atau_nip),
+      )
+      .where(eq(schema.classes.id, classId));
+
+    return rows[0];
   }
 }
