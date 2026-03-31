@@ -131,6 +131,7 @@ export class IrsService {
         namaMatkul: schema.courses.nama,
         kodeMatkul: schema.courses.kode,
         sks: schema.courses.sks,
+        classId: schema.classes.id,
       })
       .from(schema.irs)
       .innerJoin(schema.classes, eq(schema.irs.classId, schema.classes.id))
