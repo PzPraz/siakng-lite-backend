@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { IrsService } from './irs.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { EnrollIrsDto } from './dto/enroll-irs.dto';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -26,11 +25,11 @@ export class IrsController {
   @Post('enroll')
   async enroll(
     @Request() req: AuthenticatedRequest,
-    @Body() enrollIrsDto: EnrollIrsDto,
+    @Body() classIds: number[],
   ) {
     const userId = req.user.id;
 
-    return this.irsService.enroll(Number(userId), enrollIrsDto.classId);
+    return this.irsService.enroll(Number(userId), classIds);
   }
 
   @Get('my-irs')
