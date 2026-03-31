@@ -9,7 +9,7 @@ import { NotFoundException } from '@nestjs/common';
 export class IrsService {
   constructor(@Inject(DRIZZLE) private db: PostgresJsDatabase<typeof schema>) {}
 
-  async enroll(studentId: number, newClassIds: number[]) {
+  async sync(studentId: number, newClassIds: number[]) {
     return await this.db.transaction(async (tx) => {
       const oldIrs = await tx
         .select()
