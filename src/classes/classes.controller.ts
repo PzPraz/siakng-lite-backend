@@ -31,6 +31,11 @@ export class ClassesController {
     return this.classesService.getStudentsInClass(Number(classId));
   }
 
+  @Get(':id')
+  async getClassById(@Param('id') classId: string) {
+    return this.classesService.getClassById(Number(classId));
+  }
+
   @Post()
   @Roles('DOSEN')
   async create(@Body() createClassDto: CreateClassDto) {
@@ -50,10 +55,5 @@ export class ClassesController {
   @Roles('DOSEN')
   async delete(@Param('id') id: string) {
     return this.classesService.delete(Number(id));
-  }
-
-  @Get(':id')
-  async getClassById(@Param('id') classId: string) {
-    return this.classesService.getClassById(classId);
   }
 }
