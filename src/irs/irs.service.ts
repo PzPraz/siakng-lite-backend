@@ -2,18 +2,41 @@ import { Inject, Injectable, BadRequestException } from '@nestjs/common';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from 'src/database/database.module';
 import * as schema from '../database/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
 import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class IrsService {
   constructor(@Inject(DRIZZLE) private db: PostgresJsDatabase<typeof schema>) {}
 
-  async enroll(studentId: number, classIds: number[]) {
+  async enroll(studentId: number, newClassIds: number[]) {
     return await this.db.transaction(async (tx) => {
-      const results: (typeof schema.irs.$inferSelect)[] = [];
+      const oldIrs = await tx
+        .select()
+        .from(schema.irs)
+        .where(eq(schema.irs.studentId, studentId));
 
-      for (const classId of classIds) {
+      const oldClassIds = oldIrs.map((item) => item.classId);
+
+      const idsToDelete = oldIrs
+        .filter((item) => !newClassIds.includes(item.classId))
+        .map((item) => item.id);
+
+      if (idsToDelete.length > 0) {
+        const hasApproved = oldIrs.some(
+          (item) => idsToDelete.includes(item.id) && item.status === 'APPROVED',
+        );
+        if (hasApproved)
+          throw new BadRequestException(
+            'Tidak bisa mengubah matkul yang sudah disetujui',
+          );
+
+        await tx.delete(schema.irs).where(inArray(schema.irs.id, idsToDelete));
+      }
+
+      const idsToAdd = newClassIds.filter((id) => !oldClassIds.includes(id));
+
+      for (const classId of idsToAdd) {
         const classData = await tx
           .select({
             id: schema.classes.id,
@@ -86,19 +109,14 @@ export class IrsService {
           );
         }
 
-        const result = await tx
-          .insert(schema.irs)
-          .values({
-            studentId: studentId,
-            classId: classId,
-            status: 'PENDING',
-          })
-          .returning();
-
-        results.push(result[0]);
+        await tx.insert(schema.irs).values({
+          studentId,
+          classId,
+          status: 'PENDING',
+        });
       }
 
-      return results;
+      return { message: 'IRS berhasil disinkronisasi' };
     });
   }
 

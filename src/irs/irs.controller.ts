@@ -22,14 +22,14 @@ interface AuthenticatedRequest extends Request {
 export class IrsController {
   constructor(private readonly irsService: IrsService) {}
 
-  @Post('enroll')
-  async enroll(
+  @Post('sync')
+  async sync(
     @Request() req: AuthenticatedRequest,
     @Body() body: { classIds: number[] },
   ) {
     const userId = req.user.id;
 
-    return this.irsService.enroll(Number(userId), body.classIds);
+    return this.irsService.sync(Number(userId), body.classIds);
   }
 
   @Get('my-irs')
