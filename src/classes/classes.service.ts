@@ -173,6 +173,7 @@ export class ClassesService {
         sks: schema.courses.sks,
         dosenId: schema.classes.dosenId,
         namaDosen: schema.users.nama,
+        kodeMatkul: schema.courses.kode,
         terisi:
           sql<number>`(SELECT count(*) FROM ${schema.irs} WHERE ${schema.irs.classId} = ${schema.classes.id})`.mapWith(
             Number,

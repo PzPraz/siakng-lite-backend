@@ -31,6 +31,11 @@ export class ClassesController {
     return this.classesService.getStudentsInClass(Number(classId));
   }
 
+  @Get()
+  async getAllClasses() {
+    return this.classesService.findAll();
+  }
+
   @Get(':id')
   async getClassById(@Param('id') classId: string) {
     return this.classesService.getClassById(Number(classId));
