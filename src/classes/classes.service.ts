@@ -159,6 +159,8 @@ export class ClassesService {
         namaKelas: schema.classes.namaKelas,
         namaMatkul: schema.courses.nama,
         kapasitas: schema.classes.kapasitas,
+        jadwal: schema.classes.jadwal,
+        sks: schema.courses.sks,
         terisi: sql<number>`(SELECT count(*) FROM ${schema.irs} WHERE ${schema.irs.classId} = ${schema.classes.id})`,
       })
       .from(schema.classes)
