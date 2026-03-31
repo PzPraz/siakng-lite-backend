@@ -83,32 +83,32 @@ export class ClassesService {
       }
     }
 
-  if (dto.namaKelas || dto.courseId) {
-    const currentClass = await this.db.query.classes.findFirst({
-      where: eq(schema.classes.id, id),
-    });
+    if (dto.namaKelas || dto.courseId) {
+      const currentClass = await this.db.query.classes.findFirst({
+        where: eq(schema.classes.id, id),
+      });
 
-    if (!currentClass) {
-      throw new NotFoundException(`Kelas dengan ID ${id} tidak ditemukan`);
+      if (!currentClass) {
+        throw new NotFoundException(`Kelas dengan ID ${id} tidak ditemukan`);
+      }
+
+      const targetCourseId = dto.courseId ?? currentClass.courseId;
+      const targetNamaKelas = dto.namaKelas ?? currentClass.namaKelas;
+
+      const duplicate = await this.db.query.classes.findFirst({
+        where: and(
+          eq(schema.classes.courseId, targetCourseId),
+          eq(schema.classes.namaKelas, targetNamaKelas),
+          ne(schema.classes.id, id),
+        ),
+      });
+
+      if (duplicate) {
+        throw new ConflictException(
+          `Nama kelas "${targetNamaKelas}" sudah digunakan di mata kuliah ini.`,
+        );
+      }
     }
-
-    const targetCourseId = dto.courseId ?? currentClass.courseId;
-    const targetNamaKelas = dto.namaKelas ?? currentClass.namaKelas;
-
-    const duplicate = await this.db.query.classes.findFirst({
-      where: and(
-        eq(schema.classes.courseId, targetCourseId),
-        eq(schema.classes.namaKelas, targetNamaKelas),
-        ne(schema.classes.id, id),
-      ),
-    });
-
-    if (duplicate) {
-      throw new ConflictException(
-        `Nama kelas "${targetNamaKelas}" sudah digunakan di mata kuliah ini.`,
-      );
-    }
-  }
 
     const updated = await this.db
       .update(schema.classes)
