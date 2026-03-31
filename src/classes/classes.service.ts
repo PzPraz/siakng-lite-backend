@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE } from 'src/database/database.module';
 import * as schema from '../database/schema';
-import { eq, sql, and } from 'drizzle-orm';
+import { eq, sql, and, ne } from 'drizzle-orm';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { CreateClassDto } from './dto/create-class.dto';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ConflictException } from '@nestjs/common';
 
 @Injectable()
 export class ClassesService {
@@ -46,6 +46,19 @@ export class ClassesService {
       );
     }
 
+    const existingClass = await this.db.query.classes.findFirst({
+      where: and(
+        eq(schema.classes.courseId, dto.courseId),
+        eq(schema.classes.namaKelas, dto.namaKelas),
+      ),
+    });
+
+    if (existingClass) {
+      throw new ConflictException(
+        `Kelas "${dto.namaKelas}" sudah ada untuk mata kuliah ini.`,
+      );
+    }
+
     const newClass = await this.db
       .insert(schema.classes)
       .values(dto)
@@ -66,6 +79,29 @@ export class ClassesService {
       if (!dosen) {
         throw new NotFoundException(
           `Dosen dengan NIP ${dto.dosenId} tidak ditemukan`,
+        );
+      }
+    }
+
+    if (dto.namaKelas || dto.courseId) {
+      const currentClass = await this.db.query.classes.findFirst({
+        where: eq(schema.classes.id, id),
+      });
+
+      const targetCourseId = dto.courseId || currentClass?.courseId;
+      const targetNamaKelas = dto.namaKelas || currentClass?.namaKelas;
+
+      const duplicate = await this.db.query.classes.findFirst({
+        where: and(
+          eq(schema.classes.courseId, targetCourseId),
+          eq(schema.classes.namaKelas, targetNamaKelas),
+          ne(schema.classes.id, id),
+        ),
+      });
+
+      if (duplicate) {
+        throw new ConflictException(
+          `Nama kelas "${targetNamaKelas}" sudah digunakan di mata kuliah ini.`,
         );
       }
     }
