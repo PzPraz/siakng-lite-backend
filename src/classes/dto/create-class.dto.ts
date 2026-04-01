@@ -2,7 +2,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsString,
-  IsOptional,
+  IsArray,
   Min,
   MaxLength,
 } from 'class-validator';
@@ -26,8 +26,14 @@ export class CreateClassDto {
   @Min(1, { message: 'kapasitas minimal 1 orang' })
   kapasitas: number;
 
-  @IsString()
-  @IsOptional()
-  @MaxLength(100, { message: 'jadwal maksimal 100 karakter' })
-  jadwal?: string;
+  @IsArray()
+  @IsNotEmpty()
+  schedules: {
+    hari: number;
+    jamMulai: string;
+    jamSelesai: string;
+    ruangan: string;
+  }[];
+
+
 }
