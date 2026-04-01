@@ -4,7 +4,7 @@ import {
   varchar,
   pgEnum,
   integer,
-  timestamp,
+  timestamp, time
 } from 'drizzle-orm/pg-core';
 
 // Deklarasi Enum
@@ -49,3 +49,12 @@ export const irs = pgTable('irs', {
   status: varchar('status', { length: 20 }).default('PENDING'),
   createdAt: timestamp('created_at').defaultNow(),
 });
+
+export const classSchedules = pgTable('class_schedules', {
+  id: serial('id').primaryKey(),
+  classId: integer('class_id').references(() => classes.id, { onDelete: 'cascade' }),
+  hari: integer('hari').notNull(),
+  jamMulai: time('jam_mulai').notNull(),
+  jamSelesai: time('jam_selesai').notNull(),
+  ruangan: varchar('ruangan', { length: 20} )
+})
