@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE } from 'src/database/database.module';
 import * as schema from '../database/schema';
-import { eq, sql, and, ne, lt, gt } from 'drizzle-orm';
+import { eq, sql, and, ne, lt, gt, or } from 'drizzle-orm';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { CreateClassDto } from './dto/create-class.dto';
 import { NotFoundException, ConflictException } from '@nestjs/common';
@@ -42,7 +42,6 @@ export class ClassesService {
   }
 
   async create(dto: CreateClassDto) {
-
     return await this.db.transaction(async (tx) => {
       const dosen = await tx.query.users.findFirst({
         where: and(
@@ -71,7 +70,6 @@ export class ClassesService {
       }
 
       if (dto.schedules.length > 0) {
-        // Cek duplikasi/bentrok jadwal di dalam payload DTO itu sendiri
         for (let i = 0; i < dto.schedules.length; i++) {
           for (let j = i + 1; j < dto.schedules.length; j++) {
             const a = dto.schedules[i];
@@ -87,21 +85,34 @@ export class ClassesService {
         }
 
         for (const sched of dto.schedules) {
-          const overlap = await tx.query.classSchedules.findFirst({
+          const overlapRoom = await tx.query.classSchedules.findFirst({
             where: and(
               eq(schema.classSchedules.ruangan, sched.ruangan),
               eq(schema.classSchedules.hari, sched.hari),
               lt(schema.classSchedules.jamMulai, sched.jamSelesai),
               gt(schema.classSchedules.jamSelesai, sched.jamMulai),
-            ),
-            with: {
-              class: {
-                with: { course: true }
-              }
-            }
-          })
+            )
+          });
 
-          if (overlap) throw new BadRequestException(`Ruang ${sched.ruangan} sudah digunakan kelas lain`)
+          if (overlapRoom) throw new ConflictException(`Ruangan ${sched.ruangan} sudah digunakan kelas lain pada waktu tersebut.`);
+
+          const overlapDosen = await tx
+            .select()
+            .from(schema.classSchedules)
+            .innerJoin(schema.classes, eq(schema.classSchedules.classId, schema.classes.id))
+            .where(
+              and(
+                eq(schema.classes.dosenId, dto.dosenId),
+                eq(schema.classSchedules.hari, sched.hari),
+                lt(schema.classSchedules.jamMulai, sched.jamSelesai),
+                gt(schema.classSchedules.jamSelesai, sched.jamMulai)
+              )
+            )
+            .limit(1);
+
+          if (overlapDosen.length > 0) {
+            throw new ConflictException(`Dosen sedang mengajar kelas lain pada hari ke-${sched.hari} jam ${sched.jamMulai}-${sched.jamSelesai}`);
+          }
         }
       }
 
@@ -124,13 +135,26 @@ export class ClassesService {
       }
 
       return insertedClass;
-    })
+    });
   }
 
   async update(id: number, dto: Partial<CreateClassDto>) {
     return await this.db.transaction(async(tx) => {
+      const currentClass = await tx.query.classes.findFirst({
+        where: eq(schema.classes.id, id),
+      });
+
+      if (!currentClass) {
+        throw new NotFoundException(`Kelas dengan ID ${id} tidak ditemukan`);
+      }
+
+      // Tentukan target dosen, course, dan nama untuk validasi
+      const targetDosenId = dto.dosenId ?? currentClass.dosenId;
+      const targetCourseId = dto.courseId ?? currentClass.courseId;
+      const targetNamaKelas = dto.namaKelas ?? currentClass.namaKelas;
+
       if (dto.dosenId) {
-        const dosen = await this.db.query.users.findFirst({
+        const dosen = await tx.query.users.findFirst({
           where: and(
             eq(schema.users.npm_atau_nip, dto.dosenId),
             eq(schema.users.role, 'DOSEN'),
@@ -145,18 +169,7 @@ export class ClassesService {
       }
   
       if (dto.namaKelas || dto.courseId) {
-        const currentClass = await this.db.query.classes.findFirst({
-          where: eq(schema.classes.id, id),
-        });
-  
-        if (!currentClass) {
-          throw new NotFoundException(`Kelas dengan ID ${id} tidak ditemukan`);
-        }
-  
-        const targetCourseId = dto.courseId ?? currentClass.courseId;
-        const targetNamaKelas = dto.namaKelas ?? currentClass.namaKelas;
-  
-        const duplicate = await this.db.query.classes.findFirst({
+        const duplicate = await tx.query.classes.findFirst({
           where: and(
             eq(schema.classes.courseId, targetCourseId),
             eq(schema.classes.namaKelas, targetNamaKelas),
@@ -188,7 +201,7 @@ export class ClassesService {
         }
 
         for (const sched of dto.schedules) {
-          const overlap = await tx.query.classSchedules.findFirst({
+          const overlapRoom = await tx.query.classSchedules.findFirst({
             where: and(
               eq(schema.classSchedules.ruangan, sched.ruangan),
               eq(schema.classSchedules.hari, sched.hari),
@@ -198,14 +211,34 @@ export class ClassesService {
             ),
           });
   
-          if (overlap) {
+          if (overlapRoom) {
             throw new ConflictException(`Ruangan ${sched.ruangan} sudah digunakan pada kelas lain di waktu tersebut.`);
+          }
+
+          if (!targetDosenId) throw new BadRequestException(`Dosen tidak ditemukan`)
+
+          const overlapDosen = await tx
+            .select()
+            .from(schema.classSchedules)
+            .innerJoin(schema.classes, eq(schema.classSchedules.classId, schema.classes.id))
+            .where(
+              and(
+                eq(schema.classes.dosenId, targetDosenId),
+                eq(schema.classSchedules.hari, sched.hari),
+                lt(schema.classSchedules.jamMulai, sched.jamSelesai),
+                gt(schema.classSchedules.jamSelesai, sched.jamMulai),
+                ne(schema.classes.id, id)
+              )
+            )
+            .limit(1);
+
+          if (overlapDosen.length > 0) {
+            throw new ConflictException(`Dosen sedang mengajar kelas lain pada hari ke-${sched.hari} jam ${sched.jamMulai}-${sched.jamSelesai}`);
           }
         }
 
         await tx.delete(schema.classSchedules).where(eq(schema.classSchedules.classId, id));
     
-
         if (dto.schedules.length > 0) {
           const schedulesToInsert = dto.schedules.map(s => ({
             ...s,
@@ -224,9 +257,6 @@ export class ClassesService {
           .where(eq(schema.classes.id, id))
           .returning();
 
-        if (updated.length === 0) {
-          throw new NotFoundException(`Kelas dengan ID ${id} tidak ditemukan`);
-        }
         return updated[0];
       }
 
@@ -234,6 +264,7 @@ export class ClassesService {
     });
   }
 
+  
   async delete(id: number) {
     const deleted = await this.db
       .delete(schema.classes)
@@ -245,8 +276,7 @@ export class ClassesService {
     }
 
     return {
-      message:  
-        'Kelas dan seluruh data pendaftaran (IRS) terkait berhasil dihapus',
+      message: 'Kelas dan seluruh data pendaftaran (IRS) terkait berhasil dihapus',
       data: deleted[0],
     };
   }
