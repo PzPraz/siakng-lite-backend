@@ -98,10 +98,21 @@ export class ClassesService {
 
       const { schedules, ...classPayload } = dto; 
   
-      const newClass = await tx
+      const [newClass] = await tx
         .insert(schema.classes)
         .values(classPayload)
         .returning();
+
+      if (schedules && schedules.length > 0) {
+      const schedulesToInsert = schedules.map(s => ({
+        classId: newClass.id,
+        hari: s.hari,
+        jamMulai: s.jamMulai,
+        jamSelesai: s.jamSelesai,
+        ruangan: s.ruangan
+      }));
+      await tx.insert(schema.classSchedules).values(schedulesToInsert);
+    }
   
       return newClass[0];
 
@@ -227,7 +238,7 @@ export class ClassesService {
     }
 
     return {
-      message:
+      message:  
         'Kelas dan seluruh data pendaftaran (IRS) terkait berhasil dihapus',
       data: deleted[0],
     };
