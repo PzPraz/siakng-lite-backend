@@ -77,7 +77,7 @@ export class CourseService {
       },
     });
 
-    if (!courseData) return null;
+    if (!courseData) throw new BadRequestException(`Mata kuliah tidak ditemukan`);
 
     const classesWithStats = await Promise.all(
       courseData.classes.map(async (cls) => {
