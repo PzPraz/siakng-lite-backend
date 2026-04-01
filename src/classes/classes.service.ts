@@ -97,27 +97,25 @@ export class ClassesService {
       }
 
       const { schedules, ...classPayload } = dto; 
-  
-      const [newClass] = await tx
+      
+      const [insertedClass] = await tx
         .insert(schema.classes)
         .values(classPayload)
         .returning();
 
       if (schedules && schedules.length > 0) {
-      const schedulesToInsert = schedules.map(s => ({
-        classId: newClass.id,
-        hari: s.hari,
-        jamMulai: s.jamMulai,
-        jamSelesai: s.jamSelesai,
-        ruangan: s.ruangan
-      }));
-      await tx.insert(schema.classSchedules).values(schedulesToInsert);
-    }
-  
-      return newClass[0];
+        const schedulesToInsert = schedules.map(s => ({
+          classId: insertedClass.id,
+          hari: s.hari,
+          jamMulai: s.jamMulai,
+          jamSelesai: s.jamSelesai,
+          ruangan: s.ruangan
+        }));
+        await tx.insert(schema.classSchedules).values(schedulesToInsert);
+      }
 
+      return insertedClass;
     })
-
   }
 
   async update(id: number, dto: Partial<CreateClassDto>) {
