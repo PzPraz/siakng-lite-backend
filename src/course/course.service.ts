@@ -3,7 +3,7 @@ import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from 'src/database/database.module';
 import * as schema from '../database/schema';
 import { CreateCourseDto } from './dto/create-course.dto';
-import { eq, or, ne, and } from 'drizzle-orm';
+import { eq, or, ne, and, sql } from 'drizzle-orm';
 
 @Injectable()
 export class CourseService {
@@ -65,46 +65,45 @@ export class CourseService {
   }
 
   async getById(id: number) {
-    const rows = await this.db
-      .select({
-        // Data Course
-        courseId: schema.courses.id,
-        nama: schema.courses.nama,
-        kode: schema.courses.kode,
-        sks: schema.courses.sks,
-        // Data Kelas
-        classId: schema.classes.id,
-        namaKelas: schema.classes.namaKelas,
-        jadwal: schema.classes.jadwal,
-        kapasitas: schema.classes.kapasitas,
-        namaDosen: schema.users.nama,
+    const courseData = await this.db.query.courses.findFirst({
+      where: eq(schema.courses.id, id),
+      with: {
+        classes: {
+          with: {
+            dosen: true,
+            schedules: true,
+          },
+        },
+      },
+    });
+
+    if (!courseData) return null;
+
+    const classesWithStats = await Promise.all(
+      courseData.classes.map(async (cls) => {
+        const enrolled = await this.db
+          .select({ count: sql<number>`count(*)` })
+          .from(schema.irs)
+          .where(eq(schema.irs.classId, cls.id));
+
+        return {
+          id: cls.id,
+          namaKelas: cls.namaKelas,
+          jadwal: cls.jadwal,
+          kapasitas: cls.kapasitas,
+          namaDosen: cls.dosen?.nama ?? 'Staf Pengajar',
+          terisi: Number(enrolled[0]?.count ?? 0),
+          schedules: cls.schedules,
+        };
       })
-      .from(schema.courses)
-      .leftJoin(schema.classes, eq(schema.classes.courseId, schema.courses.id))
-      .leftJoin(
-        schema.users,
-        eq(schema.classes.dosenId, schema.users.npm_atau_nip),
-      )
-      .where(eq(schema.courses.id, id));
+    );
 
-    if (rows.length === 0) return null;
-
-    const result = {
-      id: rows[0].courseId,
-      nama: rows[0].nama,
-      kode: rows[0].kode,
-      sks: rows[0].sks,
-      classes: rows
-        .filter((row) => row.classId !== null)
-        .map((row) => ({
-          id: row.classId,
-          namaKelas: row.namaKelas,
-          jadwal: row.jadwal,
-          kapasitas: row.kapasitas,
-          namaDosen: row.namaDosen,
-        })),
+    return {
+      id: courseData.id,
+      nama: courseData.nama,
+      kode: courseData.kode,
+      sks: courseData.sks,
+      classes: classesWithStats,
     };
-
-    return result;
   }
 }
