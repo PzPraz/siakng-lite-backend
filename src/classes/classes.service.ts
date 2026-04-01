@@ -11,25 +11,34 @@ export class ClassesService {
   constructor(@Inject(DRIZZLE) private db: PostgresJsDatabase<typeof schema>) {}
 
   async findAll() {
-    return await this.db
+    const data = await this.db.query.classes.findMany({
+      with: { course: true, dosen: true, schedules: true },
+    });
+
+    const stats = await this.db
       .select({
-        id: schema.classes.id,
-        namaKelas: schema.classes.namaKelas,
-        jadwal: schema.classes.jadwal,
-        kapasitas: schema.classes.kapasitas,
-        namaMatkul: schema.courses.nama,
-        sks: schema.courses.sks,
-        dosenId: schema.classes.dosenId,
-        namaDosen: schema.users.nama,
-        courseId: schema.classes.courseId,
-        terisi: sql<number>`(SELECT count(*) FROM ${schema.irs} WHERE ${schema.irs.classId} = ${schema.classes.id})`,
+        classId: schema.irs.classId,
+        count: sql<number>`count(*)`
       })
-      .from(schema.classes)
-      .innerJoin(schema.courses, eq(schema.classes.courseId, schema.courses.id))
-      .leftJoin(
-        schema.users,
-        eq(schema.classes.dosenId, schema.users.npm_atau_nip),
-      );
+      .from(schema.irs)
+      .groupBy(schema.irs.classId);
+
+    const statsMap = new Map(stats.map(s => [s.classId, Number(s.count)]));
+
+    return data.map((c) => ({
+      id: c.id,
+      namaKelas: c.namaKelas,
+      jadwal: c.jadwal,
+      kapasitas: c.kapasitas,
+      courseId: c.courseId,
+      namaMatkul: c.course.nama,
+      kodeMatkul: c.course.kode,
+      sks: c.course.sks,
+      dosenId: c.dosenId,
+      namaDosen: c.dosen?.nama ?? 'Staf Pengajar',
+      schedules: c.schedules,
+      terisi: statsMap.get(c.id) ?? 0,
+    }));
   }
 
   async create(dto: CreateClassDto) {
@@ -256,47 +265,68 @@ export class ClassesService {
   }
 
   async getDosenClasses(dosenNip: string) {
-    return await this.db
+    const data = await this.db.query.classes.findMany({
+      where: eq(schema.classes.dosenId, dosenNip),
+      with: {
+        course: true,
+        schedules: true,
+      },
+    });
+
+    const stats = await this.db
       .select({
-        id: schema.classes.id,
-        namaKelas: schema.classes.namaKelas,
-        namaMatkul: schema.courses.nama,
-        kapasitas: schema.classes.kapasitas,
-        jadwal: schema.classes.jadwal,
-        sks: schema.courses.sks,
-        terisi: sql<number>`(SELECT count(*) FROM ${schema.irs} WHERE ${schema.irs.classId} = ${schema.classes.id})`,
+        classId: schema.irs.classId,
+        count: sql<number>`count(*)`
       })
-      .from(schema.classes)
-      .innerJoin(schema.courses, eq(schema.classes.courseId, schema.courses.id))
-      .where(eq(schema.classes.dosenId, dosenNip));
+      .from(schema.irs)
+      .groupBy(schema.irs.classId);
+
+    const statsMap = new Map(stats.map(s => [s.classId, Number(s.count)]));
+
+    return data.map((c) => ({
+      id: c.id,
+      namaKelas: c.namaKelas,
+      namaMatkul: c.course.nama,
+      kapasitas: c.kapasitas,
+      jadwal: c.jadwal,
+      sks: c.course.sks,
+      terisi: statsMap.get(c.id) ?? 0,
+      schedules: c.schedules,
+    }));
   }
 
   async getClassById(classId: number) {
-    const rows = await this.db
-      .select({
-        id: schema.classes.id,
-        namaKelas: schema.classes.namaKelas,
-        jadwal: schema.classes.jadwal,
-        courseId: schema.classes.courseId,
-        namaMatkul: schema.courses.nama,
-        sks: schema.courses.sks,
-        dosenId: schema.classes.dosenId,
-        namaDosen: schema.users.nama,
-        kodeMatkul: schema.courses.kode,
-        terisi:
-          sql<number>`(SELECT count(*) FROM ${schema.irs} WHERE ${schema.irs.classId} = ${schema.classes.id})`.mapWith(
-            Number,
-          ),
-        kapasitas: schema.classes.kapasitas,
-      })
-      .from(schema.classes)
-      .innerJoin(schema.courses, eq(schema.classes.courseId, schema.courses.id))
-      .leftJoin(
-        schema.users,
-        eq(schema.classes.dosenId, schema.users.npm_atau_nip),
-      )
-      .where(eq(schema.classes.id, classId));
+    const result = await this.db.query.classes.findFirst({
+      where: eq(schema.classes.id, classId),
+      with: {
+        course: true,
+        dosen: true,
+        schedules: true,
+      },
+    });
 
-    return rows[0];
+    if (!result) {
+      throw new NotFoundException(`Kelas dengan ID ${classId} tidak ditemukan`);
+    }
+
+    const enrolledCount = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.irs)
+      .where(eq(schema.irs.classId, classId));
+
+    return {
+      id: result.id,
+      namaKelas: result.namaKelas,
+      jadwal: result.jadwal,
+      courseId: result.courseId,
+      namaMatkul: result.course.nama,
+      sks: result.course.sks,
+      kodeMatkul: result.course.kode,
+      dosenId: result.dosenId,
+      namaDosen: result.dosen?.nama ?? 'Staf Pengajar',
+      kapasitas: result.kapasitas,
+      terisi: Number(enrolledCount[0]?.count ?? 0),
+      schedules: result.schedules,
+    };
   }
 }
