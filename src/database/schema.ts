@@ -7,6 +7,7 @@ import {
   timestamp, time
 } from 'drizzle-orm/pg-core';
 
+
 // Deklarasi Enum
 export const roleEnum = pgEnum('role', ['DOSEN', 'MAHASISWA']);
 
@@ -58,3 +59,37 @@ export const classSchedules = pgTable('class_schedules', {
   jamSelesai: time('jam_selesai').notNull(),
   ruangan: varchar('ruangan', { length: 20} )
 })
+
+
+import { relations } from 'drizzle-orm';
+
+// 1. Relasi untuk Tabel Users
+export const usersRelations = relations(users, ({ many }) => ({
+  classes: many(classes),
+}));
+
+// 2. Relasi untuk Tabel Courses
+export const coursesRelations = relations(courses, ({ many }) => ({
+  classes: many(classes),
+}));
+
+// 3. Relasi untuk Tabel Classes
+export const classesRelations = relations(classes, ({ one, many }) => ({
+  course: one(courses, {
+    fields: [classes.courseId],
+    references: [courses.id],
+  }),
+  dosen: one(users, {
+    fields: [classes.dosenId],
+    references: [users.npm_atau_nip],
+  }),
+  schedules: many(classSchedules),
+}));
+
+// 4. Relasi untuk Tabel ClassSchedules
+export const classSchedulesRelations = relations(classSchedules, ({ one }) => ({
+  class: one(classes, {
+    fields: [classSchedules.classId],
+    references: [classes.id],
+  }),
+}));
