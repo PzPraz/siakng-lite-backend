@@ -26,7 +26,7 @@ export class CourseService {
       throw new BadRequestException(`Mata kuliah dengan ${field} tersebut sudah terdaftar di sistem.`);
     }
 
-  return await this.db.insert(schema.courses).values(data).returning();
+    return await this.db.insert(schema.courses).values(data).returning();
 }
 
   async delete(id: number) {
@@ -89,7 +89,6 @@ export class CourseService {
         return {
           id: cls.id,
           namaKelas: cls.namaKelas,
-          jadwal: cls.jadwal,
           kapasitas: cls.kapasitas,
           namaDosen: cls.dosen?.nama ?? 'Staf Pengajar',
           terisi: Number(enrolled[0]?.count ?? 0),
