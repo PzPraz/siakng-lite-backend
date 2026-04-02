@@ -50,6 +50,13 @@
       "when": 1775024507900,
       "tag": "0006_chilly_firebird",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1775111278839,
+      "tag": "0007_lucky_photon",
+      "breakpoints": true
     }
   ]
 }

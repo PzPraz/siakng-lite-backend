@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module';
 import { CourseModule } from './course/course.module';
 import { IrsModule } from './irs/irs.module';
 import { ClassesModule } from './classes/classes.module';
+import { GradesModule } from './grades/grades.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ClassesModule } from './classes/classes.module';
     CourseModule,
     IrsModule,
     ClassesModule,
+    GradesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

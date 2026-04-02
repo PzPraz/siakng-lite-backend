@@ -4,9 +4,10 @@ import {
   varchar,
   pgEnum,
   integer,
-  timestamp, time
+  numeric,
+  timestamp, time, boolean
 } from 'drizzle-orm/pg-core';
-
+import { relations } from 'drizzle-orm';
 
 // Deklarasi Enum
 export const roleEnum = pgEnum('role', ['DOSEN', 'MAHASISWA']);
@@ -60,8 +61,20 @@ export const classSchedules = pgTable('class_schedules', {
   ruangan: varchar('ruangan', { length: 20} )
 })
 
+export const gradeComponents = pgTable('grade_components', {
+  id: serial('id').primaryKey(),
+  classId: integer('class_id').references(() => classes.id, { onDelete: 'cascade' }),
+  componentName: varchar('component_name', { length: 50 }).notNull(),
+  weight: integer('weight').notNull(),
+  isPublished: boolean('is_published').notNull().default(false)
+})
 
-import { relations } from 'drizzle-orm';
+export const grades = pgTable('grades', {
+  id: serial('id').primaryKey(),
+  studentId: integer('student_id').references(() => users.id, { onDelete: 'cascade' }),
+  componentId: integer('component_id').references(() => gradeComponents.id, { onDelete: 'cascade' }),
+  value: numeric('value', { precision: 3, scale: 2 }).notNull(),
+})
 
 // 1. Relasi untuk Tabel Users
 export const usersRelations = relations(users, ({ many }) => ({
