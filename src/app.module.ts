@@ -17,7 +17,7 @@ import { GradesModule } from './grades/grades.module';
     CourseModule,
     IrsModule,
     ClassesModule,
-    GradesModule,
+    GradesModule
   ],
   controllers: [AppController],
   providers: [AppService],
