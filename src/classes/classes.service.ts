@@ -28,7 +28,6 @@ export class ClassesService {
     return data.map((c) => ({
       id: c.id,
       namaKelas: c.namaKelas,
-      jadwal: c.jadwal,
       kapasitas: c.kapasitas,
       courseId: c.courseId,
       namaMatkul: c.course.nama,
@@ -318,7 +317,6 @@ export class ClassesService {
       namaKelas: c.namaKelas,
       namaMatkul: c.course.nama,
       kapasitas: c.kapasitas,
-      jadwal: c.jadwal,
       sks: c.course.sks,
       terisi: statsMap.get(c.id) ?? 0,
       schedules: c.schedules,
@@ -347,7 +345,6 @@ export class ClassesService {
     return {
       id: result.id,
       namaKelas: result.namaKelas,
-      jadwal: result.jadwal,
       courseId: result.courseId,
       namaMatkul: result.course.nama,
       sks: result.course.sks,
