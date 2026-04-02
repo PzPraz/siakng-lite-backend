@@ -37,7 +37,6 @@ export const classes = pgTable('classes', {
   namaKelas: varchar('nama_kelas', { length: 20 }).notNull(),
   dosenId: varchar('dosen_id').references(() => users.npm_atau_nip),
   kapasitas: integer('kapasitas').notNull().default(40),
-  jadwal: varchar('jadwal', { length: 100 }),
 });
 
 export const irs = pgTable('irs', {
