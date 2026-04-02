@@ -178,7 +178,6 @@ export class IrsService {
         status: schema.irs.status,
         createdAt: schema.irs.createdAt,
         namaKelas: schema.classes.namaKelas,
-        jadwal: schema.classes.jadwal,
         namaMatkul: schema.courses.nama,
         kodeMatkul: schema.courses.kode,
         sks: schema.courses.sks,
