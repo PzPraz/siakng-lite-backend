@@ -5,7 +5,7 @@ import {
   pgEnum,
   integer,
   numeric,
-  timestamp, time, boolean
+  timestamp, time, boolean, unique
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -49,6 +49,7 @@ export const irs = pgTable('irs', {
     .notNull(),
   status: varchar('status', { length: 20 }).default('PENDING'),
   createdAt: timestamp('created_at').defaultNow(),
+  nilaiAkhir: numeric('nilai_akhir', { precision: 5, scale: 2 }),
 });
 
 export const classSchedules = pgTable('class_schedules', {
@@ -69,11 +70,13 @@ export const gradeComponents = pgTable('grade_components', {
 })
 
 export const grades = pgTable('grades', {
-  id: serial('id').primaryKey(),
+  id: serial('id').primaryKey(                                                                                                                      ),
   studentId: integer('student_id').references(() => users.id, { onDelete: 'cascade' }),
   componentId: integer('component_id').references(() => gradeComponents.id, { onDelete: 'cascade' }),
   value: numeric('value', { precision: 3, scale: 2 }).notNull(),
-})
+}, (table) => ({
+  unq: unique().on(table.studentId, table.componentId)
+}))
 
 // 1. Relasi untuk Tabel Users
 export const usersRelations = relations(users, ({ many }) => ({
@@ -96,6 +99,8 @@ export const classesRelations = relations(classes, ({ one, many }) => ({
     references: [users.npm_atau_nip],
   }),
   schedules: many(classSchedules),
+  irs: many(irs),
+  gradeComponents: many(gradeComponents),
 }));
 
 // 4. Relasi untuk Tabel ClassSchedules
@@ -103,5 +108,35 @@ export const classSchedulesRelations = relations(classSchedules, ({ one }) => ({
   class: one(classes, {
     fields: [classSchedules.classId],
     references: [classes.id],
+  }),
+}));
+
+export const irsRelations = relations(irs, ({ one }) => ({
+  student: one(users, {
+    fields: [irs.studentId],
+    references: [users.id],
+  }),
+  class: one(classes, {
+    fields: [irs.classId],
+    references: [classes.id],
+  }),
+}));
+
+export const gradeComponentsRelations = relations(gradeComponents, ({ one, many }) => ({
+  class: one(classes, {
+    fields: [gradeComponents.classId],
+    references: [classes.id],
+  }),
+  grades: many(grades),
+}));
+
+export const gradesRelations = relations(grades, ({ one }) => ({
+  student: one(users, {
+    fields: [grades.studentId],
+    references: [users.id],
+  }),
+  component: one(gradeComponents, {
+    fields: [grades.componentId],
+    references: [gradeComponents.id],
   }),
 }));
