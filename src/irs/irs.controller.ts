@@ -11,7 +11,7 @@ import {
 import { IrsService } from './irs.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends Request {
   user: {
     id: string;
   };
