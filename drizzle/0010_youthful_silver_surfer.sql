@@ -1,0 +1,1 @@
+ALTER TABLE "grades" ALTER COLUMN "value" SET DATA TYPE numeric(5, 2);

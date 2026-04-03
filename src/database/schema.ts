@@ -73,7 +73,7 @@ export const grades = pgTable('grades', {
   id: serial('id').primaryKey(                                                                                                                      ),
   studentId: integer('student_id').references(() => users.id, { onDelete: 'cascade' }),
   componentId: integer('component_id').references(() => gradeComponents.id, { onDelete: 'cascade' }),
-  value: numeric('value', { precision: 3, scale: 2 }).notNull(),
+  value: numeric('value', { precision: 5, scale: 2 }).notNull(),
 }, (table) => ({
   unq: unique().on(table.studentId, table.componentId)
 }))
