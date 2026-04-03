@@ -5,6 +5,7 @@ import { eq, and, ne, ilike, inArray} from 'drizzle-orm';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { CreateGradeComponentDto } from './dto/create-grade-component.dto';
 import { CreateGradeDto } from './dto/create-grade.dto';
+import type { AuthenticatedUser } from 'src/auth/types/authenticated-user.type';
 
 @Injectable()
 export class GradesService {
@@ -268,7 +269,7 @@ export class GradesService {
     });
   }
 
-  async getStudentGradeByClass(targetStudentId: number, classId: number, currentUser: any) {
+  async getStudentGradeByClass(targetStudentId: number, classId: number, currentUser: AuthenticatedUser) {
     if (currentUser.role === 'MAHASISWA' && currentUser.id !== targetStudentId) {
       throw new ForbiddenException('Akses ditolak: Anda tidak dapat melihat nilai mahasiswa lain');
     }

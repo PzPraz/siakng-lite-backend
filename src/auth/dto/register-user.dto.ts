@@ -1,4 +1,4 @@
-export interface RegisterUser {
+export interface RegisterUserDto {
   npm_atau_nip: string;
   password: string;
   nama: string;

@@ -1,20 +1,8 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
-
-interface JwtPayload {
-  sub: number;
-  npm: string;
-  role: string;
-  nama: string;
-}
-
-interface AuthenticatedUser {
-  id: number;
-  npm: string;
-  role: string;
-  nama: string;
-}
+import type { JwtPayload } from './types/jwt-payload.type';
+import type { AuthenticatedUser } from './types/authenticated-user.type';
 
 @Injectable()
 // eslint-disable-next-line @typescript-eslint/no-unsafe-call

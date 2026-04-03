@@ -9,7 +9,7 @@ import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../database/schema';
 import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
-import { RegisterUser } from './dto/RegisterUser.dto';
+import type { RegisterUserDto } from './dto/register-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 
@@ -20,7 +20,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(userData: RegisterUser) {
+  async register(userData: RegisterUserDto) {
     // 1. Cek apakah user sudah ada
     const existingUser = await this.db
       .select()

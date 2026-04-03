@@ -6,12 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
-
-type AuthenticatedRequest = {
-  user: {
-    role: string;
-  };
-};
+import type { AuthenticatedRequest } from 'src/common/types/authenticated-request.type';
 
 @Injectable()
 export class RolesGuard implements CanActivate {

@@ -4,8 +4,9 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { CreateGradeComponentDto } from './dto/create-grade-component.dto';
 import { GradesService } from './grades.service';
-import type { AuthenticatedRequest } from 'src/irs/irs.controller';
+import type { AuthenticatedRequest } from 'src/common/types/authenticated-request.type';
 import { CreateGradeDto } from './dto/create-grade.dto';
+import { UpdatePublishStatusDto } from './dto/update-publish-status.dto';
 
 @Controller('grades')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -38,7 +39,7 @@ export class GradesController {
 
   @Patch(':classId/publish-status')
   @Roles('DOSEN')
-  async updatePublishStatus(@Param('classId') classId: string, @Body() body: { isPublished: boolean}) {
+  async updatePublishStatus(@Param('classId') classId: string, @Body() body: UpdatePublishStatusDto) {
     return this.gradesService.setPublishStatus(Number(classId), body.isPublished);
   }
 
