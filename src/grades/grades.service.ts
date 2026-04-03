@@ -160,7 +160,7 @@ export class GradesService {
       .from(schema.gradeComponents)
       .where(eq(schema.gradeComponents.classId, classId))
 
-    if (!data) throw new BadRequestException('Gagal mengambil data nilai komponen');
+    if (!data || data.length === 0) throw new BadRequestException('Gagal mengambil data nilai komponen');
 
     return data;
   }
