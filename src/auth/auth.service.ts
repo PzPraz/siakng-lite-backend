@@ -74,6 +74,7 @@ export class AuthService {
     return {
       access_token: await this.jwtService.signAsync(payload),
       user: {
+        id: user.id,
         nama: user.nama,
         role: user.role,
         npm_atau_nip: user.npm_atau_nip,
