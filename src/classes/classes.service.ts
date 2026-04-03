@@ -269,6 +269,7 @@ export class ClassesService {
       .select({
         npm: schema.users.npm_atau_nip,
         nama: schema.users.nama,
+        id: schema.users.id
       })
       .from(schema.irs)
       .innerJoin(schema.users, eq(schema.irs.studentId, schema.users.id))
