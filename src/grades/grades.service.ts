@@ -10,50 +10,105 @@ import { CreateGradeDto } from './dto/create-grade.dto';
 export class GradesService {
   constructor(@Inject(DRIZZLE) private db: PostgresJsDatabase<typeof schema>) {}
 
-  async createComponent(data: CreateGradeComponentDto) {
-    if (data.weight < 0) {
+  private static normalizeComponentName(name: string) {
+    return name.trim().toLowerCase();
+  }
+
+  private validateWeight(weight: number) {
+    if (weight < 0) {
       throw new BadRequestException('Bobot nilai tidak boleh negatif');
+    }
+  }
+
+  private validateComponentPayload(data: CreateGradeComponentDto) {
+    if (!data.components || data.components.length === 0) {
+      throw new BadRequestException('Minimal satu komponen nilai harus dikirim');
+    }
+
+    const seen = new Set<string>();
+    for (const component of data.components) {
+      this.validateWeight(component.weight);
+
+      const normalizedName = GradesService.normalizeComponentName(component.componentName);
+      if (seen.has(normalizedName)) {
+        throw new BadRequestException(`Duplikasi komponen pada payload: "${component.componentName}"`);
+      }
+      seen.add(normalizedName);
+    }
+  }
+
+  private async ensureUniqueComponentName(classId: number, componentName: string, excludeId?: number) {
+    const conditions = [
+      eq(schema.gradeComponents.classId, classId),
+      ilike(schema.gradeComponents.componentName, componentName),
+    ];
+
+    if (excludeId !== undefined) {
+      conditions.push(ne(schema.gradeComponents.id, excludeId));
     }
 
     const duplicateName = await this.db
       .select()
       .from(schema.gradeComponents)
-      .where(
-        and(
-          eq(schema.gradeComponents.classId, data.classId),
-          ilike(schema.gradeComponents.componentName, data.componentName)
-        )
-      )
+      .where(and(...conditions))
       .limit(1);
 
     if (duplicateName.length > 0) {
-      throw new BadRequestException(`Komponen dengan nama "${data.componentName}" sudah terdaftar di kelas ini`);
+      throw new BadRequestException(
+        excludeId === undefined
+          ? `Komponen dengan nama "${componentName}" sudah terdaftar di kelas ini`
+          : `Nama komponen "${componentName}" sudah digunakan oleh komponen lain di kelas ini`,
+      );
+    }
+  }
+
+  private async getTotalWeightByClass(classId: number, excludeId?: number) {
+    const conditions = [eq(schema.gradeComponents.classId, classId)];
+    if (excludeId !== undefined) {
+      conditions.push(ne(schema.gradeComponents.id, excludeId));
     }
 
-    const existingComponents = await this.db
+    const components = await this.db
       .select()
       .from(schema.gradeComponents)
-      .where(eq(schema.gradeComponents.classId, data.classId));
+      .where(and(...conditions));
 
-    const currentTotalWeight = existingComponents.reduce((acc, comp) => acc + comp.weight, 0);
+    return components.reduce((acc, comp) => acc + comp.weight, 0);
+  }
 
-    if (currentTotalWeight + data.weight > 100) {
+  async createComponent(data: CreateGradeComponentDto) {
+    this.validateComponentPayload(data);
+
+    for (const component of data.components) {
+      await this.ensureUniqueComponentName(data.classId, component.componentName);
+    }
+
+    const currentTotalWeight = await this.getTotalWeightByClass(data.classId);
+    const payloadTotalWeight = data.components.reduce((acc, component) => acc + component.weight, 0);
+
+    if (currentTotalWeight + payloadTotalWeight > 100) {
       throw new BadRequestException(
         `Total bobot melebihi 100%. Tersisa: ${100 - currentTotalWeight}%`
       );
     }
 
-    return await this.db.insert(schema.gradeComponents).values({
-      classId: data.classId,
-      componentName: data.componentName,
-      weight: data.weight,
-    }).returning();
+    return await this.db.insert(schema.gradeComponents).values(
+      data.components.map((component) => ({
+        classId: data.classId,
+        componentName: component.componentName,
+        weight: component.weight,
+      })),
+    ).returning();
   }
 
   async editComponent(id: number, data: CreateGradeComponentDto) {
-    if (data.weight < 0) {
-      throw new BadRequestException('Bobot nilai tidak boleh negatif');
+    this.validateComponentPayload(data);
+
+    if (data.components.length !== 1) {
+      throw new BadRequestException('Endpoint edit komponen hanya menerima satu komponen');
     }
+
+    const payload = data.components[0];
 
     const componentToEdit = await this.db
       .select()
@@ -65,45 +120,23 @@ export class GradesService {
       throw new NotFoundException('Komponen nilai tidak ditemukan');
     }
 
-    const duplicateName = await this.db
-      .select()
-      .from(schema.gradeComponents)
-      .where(
-        and(
-          eq(schema.gradeComponents.classId, data.classId),
-          ilike(schema.gradeComponents.componentName, data.componentName),
-          ne(schema.gradeComponents.id, id)
-        )
-      )
-      .limit(1);
+    const targetClassId = componentToEdit[0].classId ?? data.classId;
 
-    if (duplicateName.length > 0) {
-      throw new BadRequestException(`Nama komponen "${data.componentName}" sudah digunakan oleh komponen lain di kelas ini`);
-    }
+    await this.ensureUniqueComponentName(targetClassId, payload.componentName, id);
 
-    const otherComponents = await this.db
-      .select()
-      .from(schema.gradeComponents)
-      .where(
-        and(
-          eq(schema.gradeComponents.classId, data.classId),
-          ne(schema.gradeComponents.id, id)
-        )
-      );
+    const otherTotalWeight = await this.getTotalWeightByClass(targetClassId, id);
 
-    const otherTotalWeight = otherComponents.reduce((acc, comp) => acc + comp.weight, 0);
-
-    if (otherTotalWeight + data.weight > 100) {
+    if (otherTotalWeight + payload.weight > 100) {
       throw new BadRequestException(
-        `Gagal update. Total bobot akan menjadi ${otherTotalWeight + data.weight}%. Maksimal 100%.`
+        `Gagal update. Total bobot akan menjadi ${otherTotalWeight + payload.weight}%. Maksimal 100%.`
       );
     }
 
     return await this.db
       .update(schema.gradeComponents)
       .set({
-        componentName: data.componentName,
-        weight: data.weight
+        componentName: payload.componentName,
+        weight: payload.weight
       })
       .where(eq(schema.gradeComponents.id, id))
       .returning();

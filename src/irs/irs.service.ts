@@ -2,8 +2,10 @@ import { Inject, Injectable, BadRequestException } from '@nestjs/common';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from 'src/database/database.module';
 import * as schema from '../database/schema';
-import { eq, and, sql, inArray, exists } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
 import { NotFoundException } from '@nestjs/common';
+import { MAX_SKS } from 'src/common/constants/academic.constant';
+import { findOverlappingPair, isScheduleOverlap } from 'src/common/utils/schedule.util';
 
 @Injectable()
 export class IrsService {
@@ -95,9 +97,8 @@ export class IrsService {
 
     const totalSksRemaining = remainingIrs.reduce((acc, curr) => acc + curr.sks, 0);
     const sksToAdd = classesToAddData.reduce((acc, curr) => acc + curr.sks, 0);
-    const BATAS_MAKSIMAL_SKS = 24;
 
-    if (totalSksRemaining + sksToAdd > BATAS_MAKSIMAL_SKS) {
+    if (totalSksRemaining + sksToAdd > MAX_SKS) {
       throw new BadRequestException(`Batas SKS terlampaui! Total akan menjadi ${totalSksRemaining + sksToAdd} SKS.`);
     }
 
@@ -109,33 +110,28 @@ export class IrsService {
 
     for (const newSched of schedulesToAdd) {
       const matkulBaru = classesToAddData.find(c => c.id === newSched.classId);
-      
-      for (const existSched of remainingSchedules) {
-        if (newSched.hari === existSched.hari) {
-          const isOverlap = newSched.jamMulai < existSched.jamSelesai && newSched.jamSelesai > existSched.jamMulai;
-          if (isOverlap) {
-            throw new BadRequestException(`Jadwal bentrok: ${matkulBaru?.namaMatkul} dengan ${existSched.namaMatkul}`);
-          }
-        }
+
+      const overlappingSchedule = remainingSchedules.find((existing) =>
+        isScheduleOverlap(newSched, existing),
+      );
+
+      if (overlappingSchedule) {
+        throw new BadRequestException(`Jadwal bentrok: ${matkulBaru?.namaMatkul} dengan ${overlappingSchedule.namaMatkul}`);
       }
     }
 
-    // Cek bentrok antar kelas baru
-    for (let i = 0; i < schedulesToAdd.length; i++) {
-      for (let j = i + 1; j < schedulesToAdd.length; j++) {
-        const a = schedulesToAdd[i];
-        const b = schedulesToAdd[j];
-        if (a.classId !== b.classId && a.hari === b.hari) {
-          const isOverlap = a.jamMulai < b.jamSelesai && a.jamSelesai > b.jamMulai;
-          if (isOverlap) {
-            const matkulA = classesToAddData.find(c => c.id === a.classId);
-            const matkulB = classesToAddData.find(c => c.id === b.classId);
-            throw new BadRequestException(
-              `Jadwal bentrok antar kelas baru: ${matkulA?.namaMatkul} dengan ${matkulB?.namaMatkul}`
-            );
-          }
-        }
-      }
+    const overlapNewClassSchedules = findOverlappingPair(
+      schedulesToAdd,
+      (a, b) => a.classId !== b.classId,
+    );
+
+    if (overlapNewClassSchedules) {
+      const [scheduleA, scheduleB] = overlapNewClassSchedules;
+      const matkulA = classesToAddData.find(c => c.id === scheduleA.classId);
+      const matkulB = classesToAddData.find(c => c.id === scheduleB.classId);
+      throw new BadRequestException(
+        `Jadwal bentrok antar kelas baru: ${matkulA?.namaMatkul} dengan ${matkulB?.namaMatkul}`,
+      );
     }
 
     for (const classId of idsToAdd) {

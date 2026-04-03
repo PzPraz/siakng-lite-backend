@@ -1,10 +1,11 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE } from 'src/database/database.module';
 import * as schema from '../database/schema';
-import { eq, sql, and, ne, lt, gt, or } from 'drizzle-orm';
+import { eq, sql, and, ne, lt, gt } from 'drizzle-orm';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { CreateClassDto } from './dto/create-class.dto';
 import { NotFoundException, ConflictException } from '@nestjs/common';
+import { findOverlappingPair } from 'src/common/utils/schedule.util';
 
 @Injectable()
 export class ClassesService {
@@ -69,18 +70,10 @@ export class ClassesService {
       }
 
       if (dto.schedules.length > 0) {
-        for (let i = 0; i < dto.schedules.length; i++) {
-          for (let j = i + 1; j < dto.schedules.length; j++) {
-            const a = dto.schedules[i];
-            const b = dto.schedules[j];
-            
-            if (a.hari === b.hari) {
-              const isOverlap = a.jamMulai < b.jamSelesai && a.jamSelesai > b.jamMulai;
-              if (isOverlap) {
-                throw new BadRequestException(`Terdapat jadwal yang saling bentrok atau duplikat di dalam input: Hari ${a.hari} Jam ${a.jamMulai}-${a.jamSelesai} dengan Jam ${b.jamMulai}-${b.jamSelesai}`);
-              }
-            }
-          }
+        const overlapPair = findOverlappingPair(dto.schedules);
+        if (overlapPair) {
+          const [a, b] = overlapPair;
+          throw new BadRequestException(`Terdapat jadwal yang saling bentrok atau duplikat di dalam input: Hari ${a.hari} Jam ${a.jamMulai}-${a.jamSelesai} dengan Jam ${b.jamMulai}-${b.jamSelesai}`);
         }
 
         for (const sched of dto.schedules) {
@@ -184,19 +177,10 @@ export class ClassesService {
       }
   
       if (dto.schedules) {
-        // Cek duplikasi/bentrok jadwal di dalam payload DTO itu sendiri
-        for (let i = 0; i < dto.schedules.length; i++) {
-          for (let j = i + 1; j < dto.schedules.length; j++) {
-            const a = dto.schedules[i];
-            const b = dto.schedules[j];
-            
-            if (a.hari === b.hari) {
-              const isOverlap = a.jamMulai < b.jamSelesai && a.jamSelesai > b.jamMulai;
-              if (isOverlap) {
-                throw new BadRequestException(`Terdapat jadwal yang saling bentrok atau duplikat di dalam input: Hari ${a.hari} Jam ${a.jamMulai}-${a.jamSelesai} dengan Jam ${b.jamMulai}-${b.jamSelesai}`);
-              }
-            }
-          }
+        const overlapPair = findOverlappingPair(dto.schedules);
+        if (overlapPair) {
+          const [a, b] = overlapPair;
+          throw new BadRequestException(`Terdapat jadwal yang saling bentrok atau duplikat di dalam input: Hari ${a.hari} Jam ${a.jamMulai}-${a.jamSelesai} dengan Jam ${b.jamMulai}-${b.jamSelesai}`);
         }
 
         for (const sched of dto.schedules) {
