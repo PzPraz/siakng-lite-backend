@@ -12,24 +12,34 @@ Backend API untuk sistem informasi akademik SIAKNG-Lite, dibangun menggunakan Ne
 
 - Authentication: Passport.js & JWT
 
-## Project setup
+## Run Locally
 
-1. Instalasi Dependensi
+1. Clone repository
 ```bash
-$ npm install
+git clone <repo-url>
+cd siakng-lite-backend
 ```
 
-2. Konfigurasi Environment (.env)
+2. Install dependency
+```bash
+npm install
+```
+
+3. Create file `.env` di root project
 ```bash
 DATABASE_URL=postgres://user:password@neondb_url/dbname
 JWT_SECRET=your_secret_key_here
 PORT=3000
 ```
 
-
-3. Migrasi Database
+4. Jalankan migrasi database
 ```bash
 npx drizzle-kit push
+```
+
+5. Jalankan backend
+```bash
+npm run start:dev
 ```
 
 ## Compile and run the project
@@ -44,3 +54,7 @@ $ npm run start:dev
 # production mode
 $ npm run start:prod
 ```
+
+## Deployment
+
+Production API: https://siakng-lite-backend-production.up.railway.app/
