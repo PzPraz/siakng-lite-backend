@@ -49,7 +49,6 @@ export const irs = pgTable('irs', {
     .notNull(),
   status: varchar('status', { length: 20 }).default('PENDING'),
   createdAt: timestamp('created_at').defaultNow(),
-  nilaiAkhir: numeric('nilai_akhir', { precision: 5, scale: 2 }),
 });
 
 export const classSchedules = pgTable('class_schedules', {

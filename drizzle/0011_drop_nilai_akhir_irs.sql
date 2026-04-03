@@ -1,0 +1,1 @@
+ALTER TABLE "irs" DROP COLUMN IF EXISTS "nilai_akhir";
